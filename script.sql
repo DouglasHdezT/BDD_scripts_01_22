@@ -1,0 +1,213 @@
+--****************************************************
+-- Bases de datos: Introducción a SQL
+-- Autor: Douglas Hernández
+-- Correspondencia: dohernandez@uca.edu.sv
+-- Version: 1.0
+--****************************************************
+
+-- 00.00 BORRANDO BASE ANTERIOR
+-- 00.10 UTILIZANDO DB BDD_01_2022
+
+USE BDD_01_2022;
+
+-- 00.20 COMPROBAR DATOS DE HOTEL
+
+SELECT * FROM HOTEL;
+
+-- 00.30 BORRAR TABLA HOTEL
+
+DROP TABLE HOTEL;
+
+-- 01.00 CREANDO TABLA BASE
+-- 01.10 CREANDO TABLA HOTEL
+
+CREATE TABLE HOTEL(
+    id INT 
+		PRIMARY KEY
+		CHECK(id > 5),
+    nombre VARCHAR(50) NOT NULL,
+    direccion VARCHAR(100) NULL 
+		DEFAULT 'Dirección no disponible',
+    telefono CHAR(12) 
+		NOT NULL 
+		UNIQUE
+		CHECK(telefono LIKE '+503[2|6|7][0-9][0-9][0-9][0-9][0-9][0-9][0-9]')
+);
+
+-- 01.20 POBLANDO LA TABLA HOTELES
+
+INSERT INTO HOTEL VALUES 
+	(12, 'Florencia', 		'345 Vernon Pass', 			'+50365136382'),
+	(13, 'Royal Decameron', '6 Derek Crossing', 		'+50328338739'),
+	(06, 'Presidente', 		'1 New Castle Terrace', 	'+50326063675'),
+	(07, 'La Guitarra', 	'441 Armistice Lane', 		'+50371434775'),
+	(08, 'Pacífico Azul', 	'5497 Mesta Avenue', 		'+50322730000'),
+	(10, 'Casa Verde', 		'51417 Fisk Parkway', 		'+50322562539');
+
+INSERT INTO HOTEL(id, nombre, telefono) VALUES
+	(11, 'Villa Serena', 	'+50322499649'),
+	(14, 'Barceló', 		'+50324942902'),
+	(15, 'Palo Verde', 		'+50324942900'),
+	(16, 'Tropico Inn',   	'+50379831153');
+
+-- 01.30 VERIFICANDO DATOS
+
+SELECT * FROM HOTEL;
+
+-- 01.40 CREANDO TABLA HABITACION
+
+CREATE TABLE HABITACION(
+	id INT PRIMARY KEY,
+	numero INT NOT NULL,
+	precio MONEY NOT NULL,
+	id_hotel INT NOT NULL
+);
+
+-- 01.50 POBLANDO LA TABLA HABITACION
+
+INSERT INTO HABITACION VALUES
+	(01, 100, 50.25, 06),
+	(02, 101, 25.50, 06),
+	(03, 102, 75.00, 06),
+	(04, 250, 24.99, 11),
+	(05, 300, 60.15, 11),
+	(06, 301, 44.99, 11),
+	(07, 302, 44.99, 15),
+	(08, 104, 29.99, 03),
+	(09, 105, 50.25, 02),
+	(10, 106, 99.99, 01);
+
+-- 01.60 VERIFICANDO DATOS
+
+SELECT * FROM HABITACION;
+
+-- 01.70 ELIMINADO TABLA HABITACIÓN PARA MEJORAR COMPORTAMIENTO
+
+DROP TABLE HABITACION;
+
+-- 02.00 RESTRICCION FK
+
+-- 02.10 CREACION DE RESTRICCION FK
+-- 02.11 DESDE CREACION DE TABLA EN ATRIBUTO
+
+
+
+-- 02.12 DESDE CREACION DE TABLA COMO CONSTRAINT
+
+
+
+-- 02.13 DESDE LA INSTRUCCION ALTER TABLE
+
+
+
+-- 02.20 BORRANDO TABLAS TRY: 1
+-- 02.21 BORRANDO UN HOTEL SIN HABITACIONES
+
+
+
+-- 02.22 BORRANDO UN HOTEL CON HABITACIONES
+
+
+
+-- REINICIAR LOS REGISTROS DE AMBAS TABLAS
+
+
+
+-- 02.30 BORRANDO TABLAS TRY: 2
+-- 02.31 BORRANDO LAS TABLAS
+
+
+
+-- 03.20 APLICANDO LAS RESTRICCIONES
+
+
+
+-- 03.30 POBLANDO AMBAS TABLAS
+
+
+
+-- 03.40 BORRANDO UN VALOR EN HOTEL CON HABITACIONES ASIGNADAS
+
+
+
+-- 03.50 CONSULTANDO LOS DATOS
+
+
+
+-- 03.60 BORRANDO LAS TABLAS PARA HACER UN REBOOT
+
+
+
+-- 04.00 IMPLEMENTANDO LAS TABLAS DE GESTIÓN DE HOTELES
+
+-- 04.10 CREANDO LAS TABLAS Y RESTRICCIONES FK
+-- 04.11 TABLA HOTEL
+
+CREATE TABLE HOTEL(
+    id INT 
+		PRIMARY KEY
+		CHECK(id > 5),
+    nombre VARCHAR(50) NOT NULL,
+    direccion VARCHAR(100) NULL 
+		DEFAULT 'Dirección no disponible',
+    telefono CHAR(12) 
+		NOT NULL 
+		UNIQUE
+		CHECK(telefono LIKE '+503[2|6|7][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+	id_hotel_gestor INT NOT NULL
+);
+
+-- 04.12 TABLA HABITACION
+
+CREATE TABLE HABITACION(
+	id INT PRIMARY KEY,
+	numero INT NOT NULL,
+	precio MONEY NOT NULL,
+	id_hotel INT NOT NULL
+);
+
+-- 04.14 TABLA CLIENTE
+
+CREATE TABLE CLIENTE(
+	id INT PRIMARY KEY,
+	nombre VARCHAR(50) NOT NULL,
+	documento CHAR(10)
+		CHECK(documento LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9]')
+);
+
+-- 04.13 TABLA RESERVA
+
+CREATE TABLE RESERVA(
+	id INT PRIMARY KEY,
+	checkin DATE NOT NULL,
+	checkout DATE NOT NULL,
+	id_cliente INT NOT NULL,
+	id_habitacion INT NOT NULL
+);
+
+-- 04.15 TABLA COMENTARIO
+
+CREATE TABLE COMENTARIO(
+	id INT PRIMARY KEY,
+	comentario VARCHAR(140) NOT NULL,
+	calificacion INT
+		CHECK(calificacion > 0 AND calificacion <= 10),
+	id_cliente INT NOT NULL,
+	id_hotel INT NOT NULL
+);
+
+-- 04.16 TABLA SERVICIO
+
+CREATE TABLE SERVICIO(
+	id INT PRIMARY KEY,
+	nombre VARCHAR(50) NOT NULL,
+	precio MONEY NOT NULL,
+	descript VARCHAR(140) NOT NULL
+);
+
+-- 04.17 TABLA TICKETSERVCIO
+
+CREATE TABLE TICKET_SERVICIO (
+	id_reserva INT NOT NULL,
+	id_servicio INT NOT NULL
+);
