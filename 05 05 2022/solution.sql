@@ -383,6 +383,10 @@ CREATE TABLE TICKET_SERVICIO (
 	id_servicio INT NOT NULL
 );
 
+ALTER TABLE TICKER_SERVICIO
+	ADD CONSTRAINT pk_ticket_servicio
+	PRIMARY KEY(id_reserva, id_servicio)
+
 ALTER TABLE TICKET_SERVICIO 
 	ADD CONSTRAINT fk_ticket_servicio_reserva
 	FOREIGN KEY (id_reserva)
