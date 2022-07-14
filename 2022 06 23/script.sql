@@ -97,15 +97,51 @@ SELECT * FROM RESERVA ORDER BY id DESC;
 --		receptor, y la cantidad de puntos a transferir.
 --		NOTA: En la primera version de este ejercicio provocar un error de semantica y observar el resultado
 
+GO;
 
+CREATE PROCEDURE TRANSFER_POINTS
+	@id_client_send INT,
+	@id_client_recieve INT,
+	@points INT
+AS BEGIN
+	DECLARE @points_client_send INT
+	
+	SELECT @points_client_send = puntos_cliente_frecuente
+	FROM CLIENTE c
+	WHERE c.id = @id_client_send
 
+	IF @points_client_send < @points
+		PRINT 'Error: cant. puntos insuficientes';
+	ELSE
+		BEGIN
+			BEGIN TRY
+				UPDATE CLIENTE SET puntos_cliente_frecuente = 
+					puntos_cliente_frecuente - @points
+					WHERE id = @id_client_send;
+				
+				DECLARE @error INT
+				SELECT @error = 1 / 0
+
+				UPDATE CLIENTE SET puntos_cliente_frecuente = 
+					puntos_cliente_frecuente + @points
+					WHERE id = @id_client_recieve
+			END TRY
+			BEGIN CATCH
+				DECLARE @ERROR_MESSAGE VARCHAR(100)
+				SELECT @ERROR_MESSAGE = ERROR_MESSAGE()
+				PRINT 'ERROR: ' + @ERROR_MESSAGE
+			END CATCH
+		END
+END;
+
+GO;
 -- DROP PROCEDURE TRANSFERIR_PUNTOS;
 -- UPDATE CLIENTE SET puntos_cliente_frecuente = 2310 WHERE id=1;
 -- UPDATE CLIENTE SET puntos_cliente_frecuente = 4744 WHERE id=2;
 
 -- Ejecutando procedimiento almacenado (se espera un error)
 
-EXEC TRANSFERIR_PUNTOS 1, 2, 2000;
+EXEC TRANSFER_POINTS 1, 2, 2000;
 
 -- Verificando datos
 
@@ -116,7 +152,46 @@ UPDATE CLIENTE SET puntos_cliente_frecuente = 4744 WHERE id=2;
 -- 2.1	Crear una versi�n 2 del procedimiento almacenado anterior
 --		Utilizar transacciones
 
+GO
+CREATE OR ALTER PROCEDURE TRANSFER_POINTS
+	@id_client_send INT,
+	@id_client_recieve INT,
+	@points INT
+AS BEGIN
+	DECLARE @points_client_send INT
+	
+	SELECT @points_client_send = puntos_cliente_frecuente
+	FROM CLIENTE c
+	WHERE c.id = @id_client_send
 
+	IF @points_client_send < @points
+		PRINT 'Error: cant. puntos insuficientes';
+	ELSE
+		BEGIN
+			BEGIN TRY
+				BEGIN TRANSACTION TRASFER_POINTS_TRANSACTION
+
+				UPDATE CLIENTE SET puntos_cliente_frecuente = 
+					puntos_cliente_frecuente - @points
+					WHERE id = @id_client_send;
+				
+				DECLARE @error INT
+				SELECT @error = 1 / 0
+
+				UPDATE CLIENTE SET puntos_cliente_frecuente = 
+					puntos_cliente_frecuente + @points
+					WHERE id = @id_client_recieve
+
+				COMMIT TRANSACTION TRASFER_POINTS_TRANSACTION
+			END TRY
+			BEGIN CATCH
+				DECLARE @ERROR_MESSAGE VARCHAR(100)
+				SELECT @ERROR_MESSAGE = ERROR_MESSAGE()
+				PRINT 'ERROR: ' + @ERROR_MESSAGE
+				ROLLBACK TRANSACTION TRASFER_POINTS_TRANSACTION;
+			END CATCH
+		END
+END;
 
 --DROP PROCEDURE TRANSFERIR_PUNTOS;
 --UPDATE CLIENTE SET puntos_cliente_frecuente = 2949 WHERE id=1;
@@ -124,7 +199,7 @@ UPDATE CLIENTE SET puntos_cliente_frecuente = 4744 WHERE id=2;
 
 -- Ejecutando procedimiento almacenado (se espera un error)
 
-EXEC TRANSFERIR_PUNTOS 1, 2, 2000;
+EXEC TRANSFER_POINTS 1, 2, 2000;
 
 -- Verificando datos
 
@@ -166,13 +241,91 @@ CREATE TABLE REGISTRO_PUNTOS(
 	nombre_cliente VARCHAR(50),
 	puntos_ini INT,
 	puntos_fin INT,
-	descripcion VARCHAR(100)
+	descripcion VARCHAR(140)
 );
+
+GO
+CREATE OR ALTER PROCEDURE TRANSFER_POINTS
+	@id_client_send INT,
+	@id_client_recieve INT,
+	@points INT
+AS BEGIN
+	DECLARE @points_client_send INT
+	
+	SELECT @points_client_send = puntos_cliente_frecuente
+	FROM CLIENTE c
+	WHERE c.id = @id_client_send
+
+	IF @points_client_send < @points
+		PRINT 'Error: cant. puntos insuficientes';
+	ELSE
+		BEGIN
+			BEGIN TRY
+				BEGIN TRANSACTION TRASFER_POINTS_TRANSACTION
+
+				UPDATE CLIENTE SET puntos_cliente_frecuente = 
+					puntos_cliente_frecuente - @points
+					WHERE id = @id_client_send;
+				
+				--DECLARE @error INT
+				--SELECT @error = 1 / 0
+
+				UPDATE CLIENTE SET puntos_cliente_frecuente = 
+					puntos_cliente_frecuente + @points
+					WHERE id = @id_client_recieve
+
+				COMMIT TRANSACTION TRASFER_POINTS_TRANSACTION
+			END TRY
+			BEGIN CATCH
+				DECLARE @ERROR_MESSAGE VARCHAR(100)
+				SELECT @ERROR_MESSAGE = ERROR_MESSAGE()
+				PRINT 'ERROR: ' + @ERROR_MESSAGE
+				ROLLBACK TRANSACTION TRASFER_POINTS_TRANSACTION;
+			END CATCH
+		END
+END;
+
+GO
+CREATE OR ALTER TRIGGER AUDIT_TRANSFER_POINTS
+	ON CLIENTE
+	AFTER INSERT
+	AS BEGIN
+		DECLARE @fecha DATETIME;
+		DECLARE @id_cliente INT;
+		DECLARE @nombre_cliente VARCHAR(50);
+		DECLARE @puntos_ini INT;
+		DECLARE @puntos_fin INT;
+		DECLARE @descripcion VARCHAR(140);
+
+		SELECT @fecha = GETDATE();
+		
+		SELECT @id_cliente = id, @nombre_cliente = nombre,
+			@puntos_fin = puntos_cliente_frecuente
+		FROM inserted;
+
+		SELECT @puntos_ini = puntos_cliente_frecuente
+		FROM deleted;
+
+		IF @puntos_ini > @puntos_fin
+			SET @descripcion = 'Se han donado puntos'
+		ELSE 
+			BEGIN
+				IF @puntos_ini < @puntos_fin
+					SET @descripcion = 'Se han recibido puntos'
+				ELSE
+					SET @descripcion = 'No se han modificado los puntos'
+			END
+		
+		INSERT INTO REGISTRO_PUNTOS(fecha, id_cliente, nombre_cliente, puntos_ini, puntos_fin, descripcion)
+			VALUES(@fecha, @id_cliente, @nombre_cliente, @puntos_ini, @puntos_fin, @descripcion)
+	END
 
 -- Verificando datos
 SELECT * FROM CLIENTE WHERE id = 1 OR id = 2;
 UPDATE CLIENTE SET puntos_cliente_frecuente = 2310 WHERE id=1;
 UPDATE CLIENTE SET puntos_cliente_frecuente = 4744 WHERE id=2;
-EXEC TRANSFERIR_PUNTOS 1, 2, 2000;
+EXEC TRANSFER_POINTS 1, 2, 2000;
 -- Verificando contenido de la tabla REGISTRO_PUNTOS
 SELECT * FROM REGISTRO_PUNTOS;
+
+UPDATE CLIENTE SET nombre = 'Fernanda Vasquez' WHERE id = 1;
